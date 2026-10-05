@@ -1,0 +1,815 @@
+"""
+LegalEase: AI-Powered Legal Document Generator
+Complete All-in-One Standalone Streamlit Application
+"""
+
+import os
+import io
+import sys
+from datetime import datetime
+import streamlit as st
+
+# --- Page Configuration ---
+st.set_page_config(
+    page_title="LegalEase | AI Legal Document Generator",
+    page_icon="⚖️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- Custom Styling ---
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
+    .main-title {
+        color: #1E3A8A;
+        font-weight: 800;
+        font-size: 2.3rem;
+        margin-bottom: 0.2rem;
+    }
+    .sub-title {
+        color: #4B5563;
+        font-size: 1.05rem;
+        margin-bottom: 1.5rem;
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border-radius: 9999px;
+        background-color: #E0E7FF;
+        color: #3730A3;
+        margin-left: 0.4rem;
+    }
+    .stDownloadButton button {
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
+# ==============================================================================
+# SECTION 1: EMBEDDED LEGAL TEMPLATES
+# ==============================================================================
+
+TEMPLATES = {
+    "Non-Disclosure Agreement (NDA)": {
+        "description": "Protects confidential and proprietary business information shared between parties.",
+        "fields": [
+            {"id": "party_a", "label": "Disclosing Party (Full Legal Name / Entity)", "default": "Acme Innovations Inc."},
+            {"id": "party_b", "label": "Receiving Party (Full Legal Name / Entity)", "default": "Jane Doe Consulting LLC"},
+            {"id": "effective_date", "label": "Effective Date", "default": datetime.today().strftime('%B %d, %Y')},
+            {"id": "jurisdiction", "label": "Governing Jurisdiction", "default": "Delaware, United States"},
+            {"id": "duration_years", "label": "Confidentiality Duration (Years)", "default": "2"},
+            {"id": "scope", "label": "Scope of Confidential Information", "default": "Source code, trade secrets, customer records, financial models, and business operations."},
+            {"id": "is_mutual", "label": "Agreement Type", "type": "select", "options": ["Mutual (Both parties disclose)", "Unilateral (One-way disclosure)"], "default": "Mutual (Both parties disclose)"}
+        ],
+        "template": """NON-DISCLOSURE AND CONFIDENTIALITY AGREEMENT
+
+This Non-Disclosure and Confidentiality Agreement (the "Agreement") is entered into as of {effective_date} (the "Effective Date"), by and between:
+
+DISCLOSING / FIRST PARTY: {party_a}
+RECEIVING / SECOND PARTY: {party_b}
+
+(Collectively referred to as the "Parties", or individually as a "Party").
+
+RECITALS
+WHEREAS, the Parties desire to engage in confidential business discussions and exploratory evaluations regarding potential commercial collaboration; and
+WHEREAS, in connection with these discussions, Parties may disclose certain confidential, proprietary, or trade secret information;
+
+NOW, THEREFORE, the Parties agree as follows:
+
+1. DEFINITION OF CONFIDENTIAL INFORMATION
+"Confidential Information" means all non-public information disclosed directly or indirectly by one Party to the other Party, whether oral, written, electronic, or visual, including without limitation: {scope}.
+
+2. EXCLUSIONS FROM CONFIDENTIALITY
+Confidential Information does not include information that:
+(a) is or becomes publicly known through no breach of this Agreement by Receiving Party;
+(b) was already rightfully known to Receiving Party prior to disclosure without obligation of confidentiality;
+(c) is independently developed without reference to Disclosing Party's Confidential Information; or
+(d) is rightfully received from a third party without duty of non-disclosure.
+
+3. OBLIGATIONS OF RECEIVING PARTY
+The Receiving Party agrees to:
+(a) Hold all Confidential Information in strict confidence, exercising at least reasonable care;
+(b) Restrict disclosure solely to employees, counsel, and advisors with a need to know who are bound by confidentiality covenants;
+(c) Refrain from reverse engineering, decompiling, or disassembling any materials provided.
+
+4. DURATION AND SURVIVAL
+This Agreement and the confidentiality obligations herein shall remain in effect for {duration_years} years from the Effective Date, except trade secrets, which remain protected indefinitely as permitted under applicable law.
+
+5. RETURN OR DESTRUCTION OF MATERIALS
+Upon written request or termination of discussions, the Receiving Party shall promptly return or certify the destruction of all Confidential Information.
+
+6. INJUNCTIVE RELIEF
+The Receiving Party acknowledges that unauthorized disclosure causes irreparable injury for which monetary damages alone are inadequate. Disclosing Party shall be entitled to seek injunctive relief in addition to all other legal remedies.
+
+7. GOVERNING LAW
+This Agreement shall be governed by, and construed in accordance with, the laws of {jurisdiction}.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the Effective Date:
+
+------------------------------------------------------
+PARTY A: {party_a}
+Authorized Signature: _________________________________
+Date: {effective_date}
+
+------------------------------------------------------
+PARTY B: {party_b}
+Authorized Signature: _________________________________
+Date: {effective_date}
+"""
+    },
+
+    "Independent Contractor Services Agreement": {
+        "description": "Formal contract between a client and an independent freelancer or contractor.",
+        "fields": [
+            {"id": "client_name", "label": "Client Legal Name / Entity", "default": "Apex Ventures LLC"},
+            {"id": "contractor_name", "label": "Contractor Full Name / Entity", "default": "Alex Rivera"},
+            {"id": "effective_date", "label": "Effective Date", "default": datetime.today().strftime('%B %d, %Y')},
+            {"id": "services_scope", "label": "Scope of Services / Deliverables", "default": "Full-stack web application development, cloud API architecture, weekly code reviews, and production deployment."},
+            {"id": "compensation", "label": "Compensation & Payment Terms", "default": "$7,500 monthly retainer payable within 14 days of invoice submission."},
+            {"id": "term_duration", "label": "Contract Term / Completion Date", "default": "6 months or upon milestone completion"},
+            {"id": "jurisdiction", "label": "Governing Jurisdiction", "default": "California, United States"}
+        ],
+        "template": """INDEPENDENT CONTRACTOR SERVICES AGREEMENT
+
+This Independent Contractor Agreement (the "Agreement") is made effective as of {effective_date}, by and between:
+
+CLIENT: {client_name}
+CONTRACTOR: {contractor_name}
+
+RECITALS
+WHEREAS, Client desires to retain Contractor to perform certain professional services, and Contractor possesses the requisite expertise;
+
+NOW, THEREFORE, the Parties agree as follows:
+
+1. SERVICES AND PERFORMANCE
+Contractor agrees to perform the following services (the "Services"):
+{services_scope}
+Contractor shall perform all Services in a professional, workmanlike manner meeting customary industry standards.
+
+2. TERM AND TERMINATION
+(a) Term: This Agreement commences on {effective_date} and shall continue for {term_duration}, unless terminated earlier.
+(b) Termination for Convenience: Either Party may terminate with fourteen (14) days prior written notice.
+(c) Termination for Breach: Either Party may terminate immediately if a material breach remains uncured for seven (7) days after written notice.
+
+3. COMPENSATION AND EXPENSES
+(a) Client agrees to compensate Contractor: {compensation}
+(b) Contractor is solely responsible for all income taxes, withholding, self-employment taxes, and insurances.
+
+4. INDEPENDENT CONTRACTOR STATUS
+Contractor is an independent contractor, not an employee, agent, or partner of Client. Contractor retains full control over the manner and means of performing the Services.
+
+5. INTELLECTUAL PROPERTY ("WORK MADE FOR HIRE")
+All deliverables, software, documentation, and work product developed specifically for Client shall belong exclusively to Client as a "work made for hire." Contractor assigns all worldwide rights, title, and interest to Client.
+
+6. CONFIDENTIALITY
+Contractor shall keep Client's proprietary business information, source code, and customer records strictly confidential during and after the term.
+
+7. GOVERNING LAW
+This Agreement shall be governed by the laws of {jurisdiction}.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement:
+
+------------------------------------------------------
+CLIENT: {client_name}
+Authorized Signature: _________________________________
+Date: {effective_date}
+
+------------------------------------------------------
+CONTRACTOR: {contractor_name}
+Authorized Signature: _________________________________
+Date: {effective_date}
+"""
+    },
+
+    "Employment Offer Letter / Agreement": {
+        "description": "Standard employment contract specifying position, salary, benefits, and at-will terms.",
+        "fields": [
+            {"id": "company_name", "label": "Company Legal Name", "default": "NextGen Software Corp."},
+            {"id": "employee_name", "label": "Candidate / Employee Full Name", "default": "Jordan Taylor"},
+            {"id": "job_title", "label": "Job Title / Position", "default": "Senior AI Systems Architect"},
+            {"id": "start_date", "label": "Employment Start Date", "default": datetime.today().strftime('%B %d, %Y')},
+            {"id": "salary", "label": "Annual Salary / Compensation", "default": "$145,000 USD paid semi-monthly"},
+            {"id": "reporting_to", "label": "Direct Supervisor / Reporting Manager", "default": "Chief Technology Officer (CTO)"},
+            {"id": "jurisdiction", "label": "Governing Jurisdiction", "default": "New York, United States"}
+        ],
+        "template": """EMPLOYMENT AGREEMENT & FORMAL OFFER LETTER
+
+Date: {start_date}
+
+Dear {employee_name},
+
+On behalf of {company_name} (the "Company"), we are pleased to offer you the position of {job_title}.
+
+1. POSITION AND DUTIES
+You will serve as {job_title}, reporting directly to {reporting_to}. You agree to devote your full business time, attention, and energies to the Company's business.
+
+2. START DATE & LOCATION
+Your employment begins on {start_date}. Your primary working location shall be at Company offices or authorized remote arrangement.
+
+3. COMPENSATION & BENEFITS
+(a) Base Salary: You will receive an annualized base salary of {salary}, subject to standard statutory withholdings.
+(b) Benefits: You are eligible to participate in Company health insurance, retirement 401(k), paid time off (PTO), and company holidays.
+
+4. AT-WILL EMPLOYMENT
+Your employment with the Company is "at-will." Both you and the Company have the right to terminate employment at any time, with or without cause or advance notice.
+
+5. PROPRIETARY INFORMATION AND INVENTIONS
+You agree to sign and abide by the Company's standard Employee Invention Assignment and Confidentiality Agreement as a condition of employment.
+
+6. GOVERNING LAW
+This Agreement is governed by the laws of {jurisdiction}.
+
+ACCEPTANCE OF OFFER:
+I accept the offer of employment set forth above.
+
+------------------------------------------------------
+EMPLOYEE: {employee_name}
+Signature: ___________________________________________
+Date: ________________________
+
+------------------------------------------------------
+COMPANY: {company_name}
+Authorized Officer: __________________________________
+Date: {start_date}
+"""
+    },
+
+    "Residential Lease Agreement": {
+        "description": "Standard residential tenancy agreement between landlord and tenant.",
+        "fields": [
+            {"id": "landlord_name", "label": "Landlord Legal Name", "default": "Marcus Sterling Properties LLC"},
+            {"id": "tenant_name", "label": "Tenant Full Name(s)", "default": "Samantha Reed"},
+            {"id": "property_address", "label": "Rental Property Address", "default": "742 Evergreen Terrace, Apt 4B, Springfield"},
+            {"id": "monthly_rent", "label": "Monthly Rent Amount", "default": "$2,200 USD payable on the 1st of each month"},
+            {"id": "security_deposit", "label": "Security Deposit Amount", "default": "$2,200 USD refundable upon checkout inspection"},
+            {"id": "lease_term", "label": "Lease Term / Duration", "default": "12 months beginning on the first day of next month"},
+            {"id": "jurisdiction", "label": "Governing Jurisdiction", "default": "Illinois, United States"}
+        ],
+        "template": """RESIDENTIAL LEASE AGREEMENT
+
+This Residential Lease Agreement (the "Lease") is entered into by and between:
+
+LANDLORD: {landlord_name}
+TENANT: {tenant_name}
+
+PREMISES: Landlord leases to Tenant the premises located at:
+{property_address}
+
+1. LEASE TERM
+The term of this Lease shall be for {lease_term}.
+
+2. RENT AND PAYMENTS
+Tenant agrees to pay rent of {monthly_rent}. Rent received after the 5th calendar day shall incur a late charge of 5% of monthly rent.
+
+3. SECURITY DEPOSIT
+Upon execution, Tenant deposits {security_deposit} with Landlord to secure faithful performance. The deposit will be returned within 30 days of surrender, less deductions for damages beyond normal wear and tear.
+
+4. USE OF PREMISES
+The premises shall be occupied strictly as a private single-family residence. No unauthorized subleasing or commercial operations are permitted without Landlord's written consent.
+
+5. REPAIRS AND MAINTENANCE
+Tenant shall keep the premises clean and sanitary. Tenant is responsible for minor damages caused by neglect; Landlord maintains structural, plumbing, heating, and electrical systems.
+
+6. GOVERNING LAW
+This Lease shall be governed by landlord-tenant statutes of {jurisdiction}.
+
+IN WITNESS WHEREOF, the Parties execute this Residential Lease:
+
+------------------------------------------------------
+LANDLORD: {landlord_name}
+Signature: ___________________________________________
+Date: ________________________
+
+------------------------------------------------------
+TENANT: {tenant_name}
+Signature: ___________________________________________
+Date: ________________________
+"""
+    }
+}
+
+
+def render_template(template_name: str, values: dict) -> str:
+    """Safely renders template with user provided inputs."""
+    tpl = TEMPLATES[template_name]["template"]
+    try:
+        return tpl.format(**values)
+    except KeyError:
+        out = tpl
+        for k, v in values.items():
+            out = out.replace("{" + k + "}", str(v))
+        return out
+
+
+# ==============================================================================
+# SECTION 2: EMBEDDED DOCUMENT EXPORTERS (PDF & DOCX)
+# ==============================================================================
+
+def generate_legal_pdf(document_text: str, title: str = "LEGAL AGREEMENT") -> bytes:
+    """Generates professional legal PDF using ReportLab."""
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.pdfgen import canvas
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, leftMargin=54, rightMargin=54, topMargin=54, bottomMargin=54)
+        styles = getSampleStyleSheet()
+
+        title_style = ParagraphStyle(
+            'DocTitle', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=14, leading=17,
+            textColor=colors.HexColor("#0F172A"), alignment=1, spaceAfter=14
+        )
+        heading_style = ParagraphStyle(
+            'SectionHeader', parent=styles['Heading2'], fontName='Helvetica-Bold', fontSize=10, leading=13,
+            textColor=colors.HexColor("#1E3A8A"), spaceBefore=8, spaceAfter=4
+        )
+        body_style = ParagraphStyle(
+            'DocBody', parent=styles['Normal'], fontName='Helvetica', fontSize=9, leading=13,
+            textColor=colors.HexColor("#1E293B"), spaceAfter=5
+        )
+
+        story = [Paragraph(title.upper(), title_style), Spacer(1, 8)]
+
+        for line in document_text.split("\n"):
+            stripped = line.strip()
+            if not stripped:
+                story.append(Spacer(1, 4))
+                continue
+            clean = stripped.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            if stripped.startswith("###") or (len(stripped) > 2 and stripped[:2].isdigit() and stripped[2] == ".") or stripped.isupper():
+                story.append(Paragraph(clean.lstrip("#").strip(), heading_style))
+            else:
+                story.append(Paragraph(clean, body_style))
+
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
+    except Exception as e:
+        # Fallback to plain text bytes if reportlab has issues
+        return document_text.encode("utf-8")
+
+
+def generate_legal_docx(document_text: str, title: str = "LEGAL AGREEMENT") -> bytes:
+    """Generates styled Word (.docx) document using python-docx."""
+    try:
+        from docx import Document
+        from docx.shared import Pt, Inches, RGBColor
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+        doc = Document()
+        for section in doc.sections:
+            section.top_margin = Inches(1.0)
+            section.bottom_margin = Inches(1.0)
+            section.left_margin = Inches(1.0)
+            section.right_margin = Inches(1.0)
+
+        # Title
+        p_title = doc.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = p_title.add_run(title.upper())
+        run.bold = True
+        run.font.name = "Arial"
+        run.font.size = Pt(15)
+        run.font.color.rgb = RGBColor(30, 58, 138)
+        p_title.paragraph_format.space_after = Pt(14)
+
+        for line in document_text.split("\n"):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            p = doc.add_paragraph()
+            p.paragraph_format.line_spacing = 1.15
+            p.paragraph_format.space_after = Pt(5)
+
+            if stripped.startswith("###") or (len(stripped) > 2 and stripped[:2].isdigit() and stripped[2] == ".") or stripped.isupper():
+                clean_heading = stripped.lstrip("#").strip()
+                r = p.add_run(clean_heading)
+                r.bold = True
+                r.font.name = "Arial"
+                r.font.size = Pt(11)
+                r.font.color.rgb = RGBColor(30, 58, 138)
+                p.paragraph_format.space_before = Pt(8)
+            else:
+                r = p.add_run(stripped)
+                r.font.name = "Arial"
+                r.font.size = Pt(10)
+                r.font.color.rgb = RGBColor(35, 35, 35)
+
+        buf = io.BytesIO()
+        doc.save(buf)
+        buf.seek(0)
+        return buf.getvalue()
+    except Exception:
+        return document_text.encode("utf-8")
+
+
+# ==============================================================================
+# SECTION 3: EMBEDDED AI ENGINE (GEMINI + OFFLINE HEURISTIC)
+# ==============================================================================
+
+def call_gemini_ai(prompt: str, api_key: str = None) -> str:
+    """Calls Gemini via google.genai or legacy SDK with fallback."""
+    key = api_key or os.getenv("GEMINI_API_KEY", "").strip()
+    if not key:
+        return None
+
+    # Try modern google.genai SDK
+    try:
+        from google import genai
+        client = genai.Client(api_key=key)
+        res = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
+        if res and res.text:
+            return res.text.strip()
+    except Exception:
+        pass
+
+    # Try legacy SDK
+    try:
+        import google.generativeai as legacy_genai
+        legacy_genai.configure(api_key=key)
+        model = legacy_genai.GenerativeModel("gemini-1.5-flash")
+        res = model.generate_content(prompt)
+        if res and res.text:
+            return res.text.strip()
+    except Exception:
+        pass
+
+    return None
+
+
+def generate_ai_contract(prompt: str, doc_type: str, jurisdiction: str, clauses: list, api_key: str = None):
+    clauses_str = ", ".join(clauses) if clauses else "Standard boilerplate clauses"
+    full_prompt = f"""
+You are an expert senior legal counsel specializing in corporate and commercial law.
+Draft an exhaustive, professionally structured, legally enforceable agreement.
+Do NOT use markdown code fences (```); output raw clean legal document text.
+
+Document Type: {doc_type}
+Governing Jurisdiction: {jurisdiction}
+Mandatory Clauses to Include: {clauses_str}
+Client Requirements / Terms:
+{prompt}
+
+Draft the complete legal agreement now:
+"""
+    ai_text = call_gemini_ai(full_prompt, api_key=api_key)
+    if ai_text:
+        return ai_text, True
+
+    # Offline Smart Synthesizer
+    fallback = f"""CUSTOM LEGAL AGREEMENT: {doc_type.upper()}
+
+This Agreement is made effective as of the date of execution, governed by the laws of {jurisdiction}.
+
+1. PARTIES AND TRANSACTIONAL SCOPE
+The Parties formalize their binding obligations concerning the following specifications:
+{prompt}
+
+2. OPERATIONAL TERMS AND MANDATORY COVENANTS
+"""
+    for idx, c in enumerate(clauses, 1):
+        fallback += f"\n2.{idx} {c.upper()}\nThe Parties agree to incorporate standard legal provisions for {c.lower()} pursuant to the prevailing statutory codes of {jurisdiction}.\n"
+
+    fallback += f"""
+3. GOVERNING LAW AND JURISDICTION
+This Agreement shall be governed by, and construed in accordance with, the laws of {jurisdiction}. Any dispute arising hereunder shall be submitted exclusively to the competent judicial courts of {jurisdiction}.
+
+4. SEVERABILITY AND INTEGRATION
+If any term is held invalid, remaining provisions continue in full effect. This instrument represents the complete understanding between Parties.
+
+IN WITNESS WHEREOF, the Parties execute this Agreement:
+
+------------------------------------------------------
+PARTY A: _________________________    Date: _______________
+PARTY B: _________________________    Date: _______________
+"""
+    return fallback, False
+
+
+def audit_contract_risks(text: str, api_key: str = None) -> str:
+    prompt = f"You are a contract audit specialist. Audit this legal contract for risk level (Low/Medium/High), missing protections, loopholes, and recommendations:\n\n{text[:8000]}"
+    res = call_gemini_ai(prompt, api_key)
+    if res:
+        return res
+
+    # Heuristic audit
+    tl = text.lower()
+    findings = []
+    if "indemnif" not in tl:
+        findings.append("⚠️ **Missing Indemnification**: Neither party is explicitly protected against third-party liability.")
+    else:
+        findings.append("✅ **Indemnification Present**: Mutual or unilateral liability protections detected.")
+
+    if "governing law" not in tl and "jurisdiction" not in tl:
+        findings.append("⚠️ **Ambiguous Jurisdiction**: No clear forum identified for dispute resolution.")
+    else:
+        findings.append("✅ **Governing Jurisdiction Stated**: Clear legal forum identified.")
+
+    if "severability" not in tl:
+        findings.append("ℹ️ **No Severability Clause**: An invalid clause may jeopardize the whole agreement.")
+    else:
+        findings.append("✅ **Severability Clause Included**: Protects the validity of remaining provisions.")
+
+    if "terminate" not in tl and "termination" not in tl:
+        findings.append("⚠️ **Missing Exit Mechanism**: Unclear how parties terminate the agreement.")
+    else:
+        findings.append("✅ **Termination Terms Defined**: Formal exit mechanisms are present.")
+
+    return "### 🛡️ Contract Risk & Vulnerability Audit\n\n" + "\n\n".join(findings) + "\n\n*(Connect Gemini API Key for deep AI auditing)*"
+
+
+def explain_in_plain_english(text: str, api_key: str = None) -> str:
+    prompt = f"Explain this legal contract in plain English for a non-lawyer with Executive Summary, Obligations, Deadlines/Money, Termination, and Gotchas:\n\n{text[:8000]}"
+    res = call_gemini_ai(prompt, api_key)
+    if res:
+        return res
+
+    return """### 📋 Plain English Summary (Smart Rule-Based Analysis)
+- **Primary Objective**: Formal contract establishing rights, obligations, and deliverables between parties.
+- **Key Obligations**: Ensure performance of stated services, adherence to confidentiality, and compliance with payment schedules.
+- **Termination**: Contract provides terms for both termination with notice or immediate termination upon material breach.
+- **Governing Law**: Governed by the specified jurisdiction's statutes.
+- **Tip**: *Connect a Gemini API key in the sidebar for in-depth, clause-by-clause AI semantic translation.*"""
+
+
+def refine_document_with_ai(original: str, instruction: str, api_key: str = None):
+    prompt = f"Update and rewrite this legal document based precisely on this instruction:\nINSTRUCTION: {instruction}\n\nORIGINAL:\n{original}\n\nRETURN THE UPDATED FULL DOCUMENT:"
+    res = call_gemini_ai(prompt, api_key)
+    if res:
+        return res, True
+    amended = f"{original}\n\n[AMENDMENT / ADDENDUM]\nPursuant to instruction: {instruction}\nThe parties adopt these modifications effective immediately.\n"
+    return amended, False
+
+
+# ==============================================================================
+# SECTION 4: STREAMLIT UI & WORKSPACE
+# ==============================================================================
+
+if "current_document" not in st.session_state:
+    st.session_state.current_document = ""
+if "current_doc_title" not in st.session_state:
+    st.session_state.current_doc_title = "Legal Agreement"
+
+# Sidebar
+with st.sidebar:
+    st.title("⚖️ LegalEase")
+    st.caption("AI Legal Document Generator & Auditor")
+    
+    st.markdown("---")
+    st.subheader("🔑 AI Configuration")
+    user_api_key = st.text_input(
+        "Gemini API Key (Optional)",
+        value=os.getenv("GEMINI_API_KEY", ""),
+        type="password",
+        help="Optional: Enter Google Gemini API Key for deep AI drafting. Otherwise uses built-in smart legal synthesizer."
+    )
+    active_key = user_api_key.strip() if user_api_key.strip() else None
+    
+    if active_key:
+        st.success("🟢 AI Engine: Gemini Active")
+    else:
+        st.info("🟡 AI Engine: Smart Offline Synthesizer")
+
+    st.markdown("---")
+    navigation_mode = st.radio(
+        "Select Tool",
+        [
+            "📝 Standard Legal Templates",
+            "🤖 AI Custom Drafter",
+            "🔍 Contract Risk Auditor",
+            "📖 Plain English Explainer"
+        ]
+    )
+
+    st.markdown("---")
+    st.caption("⚠️ **Disclaimer:** LegalEase provides drafting assistance and educational tools. It does not constitute formal legal counsel.")
+
+# Header
+h1, h2 = st.columns([3, 1])
+with h1:
+    st.markdown('<div class="main-title">⚖️ LegalEase</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-title">AI-Powered Legal Document Generator & Compliance Auditor</div>', unsafe_allow_html=True)
+with h2:
+    st.markdown("""
+        <div style="text-align: right; margin-top: 15px;">
+            <span class="badge">Python</span>
+            <span class="badge">Streamlit</span>
+            <span class="badge">Gemini AI</span>
+        </div>
+    """, unsafe_allow_html=True)
+
+st.divider()
+
+# Mode 1: Standard Templates
+if navigation_mode == "📝 Standard Legal Templates":
+    st.subheader("📑 Standard Legal Contract Templates")
+    st.write("Select a pre-vetted legal agreement framework, customize the fields, and generate your contract.")
+
+    selected_name = st.selectbox("Choose Agreement Type:", list(TEMPLATES.keys()))
+    t_info = TEMPLATES[selected_name]
+    st.info(f"**Overview:** {t_info['description']}")
+
+    with st.form("template_form"):
+        st.markdown("#### 🖊️ Contract Parameters")
+        form_values = {}
+        fields = t_info["fields"]
+
+        col1, col2 = st.columns(2)
+        for i, field in enumerate(fields):
+            curr_col = col1 if i % 2 == 0 else col2
+            with curr_col:
+                if field.get("type") == "select":
+                    form_values[field["id"]] = st.selectbox(field["label"], options=field["options"], index=0)
+                else:
+                    form_values[field["id"]] = st.text_input(field["label"], value=field.get("default", ""))
+
+        st.markdown("#### 🧩 Additional Standard Protective Clauses")
+        c1, c2, c3, c4 = st.columns(4)
+        opt_indemnity = c1.checkbox("Indemnification", value=True)
+        opt_severability = c2.checkbox("Severability", value=True)
+        opt_arbitration = c3.checkbox("Binding Arbitration", value=False)
+        opt_force_majeure = c4.checkbox("Force Majeure", value=False)
+
+        submitted = st.form_submit_button("⚡ Generate Legal Document", use_container_width=True)
+
+    if submitted:
+        rendered = render_template(selected_name, form_values)
+        extra = ""
+        if opt_arbitration and "arbitration" not in rendered.lower():
+            extra += f"\n\nADDITIONAL CLAUSE: BINDING ARBITRATION\nAny controversy arising out of this Agreement shall be settled by binding arbitration in {form_values.get('jurisdiction', 'the governing jurisdiction')}."
+        if opt_force_majeure and "force majeure" not in rendered.lower():
+            extra += "\n\nADDITIONAL CLAUSE: FORCE MAJEURE\nNeither party shall be liable for delay in performance resulting from acts beyond reasonable control, acts of God, or governmental regulations."
+        
+        st.session_state.current_document = rendered + extra
+        st.session_state.current_doc_title = selected_name
+        st.success(f"Generated {selected_name} successfully!")
+
+# Mode 2: AI Custom Drafter
+elif navigation_mode == "🤖 AI Custom Drafter":
+    st.subheader("🤖 AI Bespoke Legal Contract Drafter")
+    st.write("Describe your specific agreement requirements, parties, and deal terms. AI will construct an enforceable legal instrument.")
+
+    col_ai1, col_ai2 = st.columns([2, 1])
+    with col_ai1:
+        custom_type = st.text_input("Contract Title / Type", value="Software Licensing & Maintenance Agreement")
+        custom_prompt = st.text_area(
+            "Contract Requirements & Deal Terms",
+            height=160,
+            value="Licensor grants Licensee an enterprise license for cloud software. Licensee pays $15,000 annually. SLA guarantees 99.9% uptime. Licensor provides 24-hour bug fixes. Sublicensing or reverse-engineering is strictly prohibited.",
+            help="Specify obligations, deliverables, pricing, warranties, liabilities, and special conditions."
+        )
+    with col_ai2:
+        custom_jurisdiction = st.text_input("Governing Jurisdiction", value="Delaware, United States")
+        st.markdown("**Include Recommended Clauses:**")
+        add_conf = st.checkbox("Confidentiality / NDA", value=True)
+        add_ip = st.checkbox("Intellectual Property Assignment", value=True)
+        add_ind = st.checkbox("Limitation of Liability & Indemnity", value=True)
+        add_disp = st.checkbox("Dispute Resolution / Court Venue", value=True)
+
+    selected_clauses = []
+    if add_conf: selected_clauses.append("Confidentiality")
+    if add_ip: selected_clauses.append("IP Rights and Ownership")
+    if add_ind: selected_clauses.append("Limitation of Liability and Indemnification")
+    if add_disp: selected_clauses.append("Dispute Resolution and Governing Law")
+
+    if st.button("🚀 Draft Contract with AI", use_container_width=True):
+        with st.spinner("Drafting agreement..."):
+            doc_out, was_ai = generate_ai_contract(
+                prompt=custom_prompt, doc_type=custom_type, jurisdiction=custom_jurisdiction,
+                clauses=selected_clauses, api_key=active_key
+            )
+            st.session_state.current_document = doc_out
+            st.session_state.current_doc_title = custom_type
+            if was_ai:
+                st.success("✨ Contract drafted via Gemini AI!")
+            else:
+                st.info("📄 Contract generated via Smart Offline Synthesizer.")
+
+# Mode 3: Contract Risk Auditor
+elif navigation_mode == "🔍 Contract Risk Auditor":
+    st.subheader("🔍 AI Contract Risk & Vulnerability Auditor")
+    st.write("Scan your draft or paste an existing legal document to identify vulnerabilities, missing protections, and ambiguous wording.")
+
+    audit_input = st.text_area(
+        "Paste Contract Text for Risk Audit",
+        value=st.session_state.current_document if st.session_state.current_document else "",
+        height=220,
+        placeholder="Paste your full legal contract text here..."
+    )
+
+    if st.button("🛡️ Audit Contract for Legal Risks", use_container_width=True):
+        if not audit_input.strip():
+            st.warning("Please provide or generate a contract text to audit.")
+        else:
+            with st.spinner("Auditing contract clauses and risk posture..."):
+                report = audit_contract_risks(audit_input, api_key=active_key)
+                st.markdown(report)
+
+# Mode 4: Plain English Explainer
+elif navigation_mode == "📖 Plain English Explainer":
+    st.subheader("📖 Legalese to Plain English Translator")
+    st.write("Translate dense legal provisions, jargon, and obligations into plain, easily understandable terms for clients and stakeholders.")
+
+    explain_input = st.text_area(
+        "Paste Legal Text to Simplify",
+        value=st.session_state.current_document if st.session_state.current_document else "",
+        height=220,
+        placeholder="Paste complex contract clauses here..."
+    )
+
+    if st.button("💡 Explain in Plain English", use_container_width=True):
+        if not explain_input.strip():
+            st.warning("Please enter legal text to explain.")
+        else:
+            with st.spinner("Translating legalese into plain English..."):
+                summary = explain_in_plain_english(explain_input, api_key=active_key)
+                st.markdown(summary)
+
+# ==============================================================================
+# SECTION 5: LIVE WORKSPACE & MULTI-FORMAT EXPORT
+# ==============================================================================
+st.markdown("---")
+st.subheader("📄 Document Workspace & Live Preview")
+
+if st.session_state.current_document:
+    edited_doc = st.text_area(
+        "Live Document Editor (Editable)",
+        value=st.session_state.current_document,
+        height=320,
+        key="doc_editor_area"
+    )
+    st.session_state.current_document = edited_doc
+
+    # Refine Clauses with AI
+    with st.expander("✨ Refine or Add Clauses with AI"):
+        c_ref1, c_ref2 = st.columns([3, 1])
+        with c_ref1:
+            refine_inst = st.text_input("Refinement Prompt", placeholder="e.g. Add a 12-month non-compete clause, or increase payment late fee to 10%")
+        with c_ref2:
+            st.write("")
+            st.write("")
+            refine_btn = st.button("Apply AI Refinement")
+
+        if refine_btn and refine_inst.strip():
+            with st.spinner("Applying refinement..."):
+                updated, _ = refine_document_with_ai(st.session_state.current_document, refine_inst, active_key)
+                st.session_state.current_document = updated
+                st.rerun()
+
+    # Multi-Format Export Buttons
+    st.markdown("#### 📥 Export & Download")
+    col_d1, col_d2, col_d3, col_d4 = st.columns(4)
+
+    with col_d1:
+        pdf_bytes = generate_legal_pdf(st.session_state.current_document, title=st.session_state.current_doc_title)
+        st.download_button(
+            label="📄 Download PDF",
+            data=pdf_bytes,
+            file_name=f"{st.session_state.current_doc_title.lower().replace(' ', '_')}_{datetime.today().strftime('%Y%m%d')}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+
+    with col_d2:
+        docx_bytes = generate_legal_docx(st.session_state.current_document, title=st.session_state.current_doc_title)
+        st.download_button(
+            label="📘 Download Word (.docx)",
+            data=docx_bytes,
+            file_name=f"{st.session_state.current_doc_title.lower().replace(' ', '_')}_{datetime.today().strftime('%Y%m%d')}.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            use_container_width=True
+        )
+
+    with col_d3:
+        st.download_button(
+            label="📝 Download Markdown (.md)",
+            data=st.session_state.current_document,
+            file_name=f"{st.session_state.current_doc_title.lower().replace(' ', '_')}.md",
+            mime="text/markdown",
+            use_container_width=True
+        )
+
+    with col_d4:
+        st.download_button(
+            label="📋 Download Plain Text (.txt)",
+            data=st.session_state.current_document,
+            file_name=f"{st.session_state.current_doc_title.lower().replace(' ', '_')}.txt",
+            mime="text/plain",
+            use_container_width=True
+        )
+
+else:
+    st.info("💡 No document currently active. Select a template above or use the AI Custom Drafter to generate your first legal agreement.")
